@@ -52,7 +52,15 @@ def minimax(
     node_count: int,
 ):
     node_count += 1
-    if depth == 0 or board.is_game_over():
+
+    if board.is_checkmate() and maximizing_player:
+        # white checkmates black
+        return 9999
+    elif board.is_checkmate():
+        # black checkmates white
+        return -9999
+    elif depth == 0 or board.is_game_over():
+        # draw or depth reached
         return evaluate_board(board), node_count    
 
     if maximizing_player:
@@ -116,22 +124,28 @@ def play(white_engine, black_engine, time_control):
     board = chess.Board()
     game = chess.pgn.Game()
     game_moves = ''
+    current_move = 1
     while not board.is_game_over():
         searched_nodes = 0
         # ! logic works for white so far, need to generalize for black
         if board.turn == chess.WHITE:
-            move, total_nodes = white_engine(board, 5)
+            search_start = time.time()
+            move, searched_nodes = white_engine(board, 2)
+            search_end = time.time()
             # todo : log this instead of printing
-            # print(total_nodes)
-            searched_nodes += total_nodes
-            logging.info('nodes : ' + str(searched_nodes))
+            logging.info(f'move {current_move}')
+            current_move += 1
+            logging.info('nodes : ' + str(searched_nodes) + ' time: ' + str(search_end-search_start))
         else:
-            move = black_engine(board,3)
+            search_start = time.time()
+            move, searched_nodes = black_engine(board, 2)
+            search_end = time.time()
+            logging.info('nodes : ' + str(searched_nodes) + ' time: ' + str(search_end-search_start))
             
         if move in board.legal_moves:
             board.push(move)
             game.add_variation(move)
-            game_moves += str(move) + ' '
+            game_moves += ' ' + str(move)
             logging.info(str(move))
         else:
             print(board)
@@ -139,13 +153,10 @@ def play(white_engine, black_engine, time_control):
         
 
     game.headers["Result"] = board.result()
-    # game.headers['Total nodes searched: '] = searched_nodes
     print("Game over")
     print("Result: ", board.result())
-    print(board.variation_san)
-    # print(game_moves)
 
-    return board.result(), game_moves.strip()
+    return board.result(), game_moves
 
 
 def test_against_previous(current, previous, savefile: str, n_games: int):
@@ -204,5 +215,5 @@ def iterative_deepening_minimax(board:chess.Board, max_depth:int, time_limit:int
 
 
 if __name__ == "__main__":
-    test_against_previous(choose_move, get_random_move, 'v1_3plies_vs_random.txt', 1)
+    test_against_previous(choose_move, choose_move, 'test_runs/v1_4ply_vs_v1_2ply_checkmate_fixed.txt', 1)
 
