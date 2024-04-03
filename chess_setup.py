@@ -52,7 +52,15 @@ def minimax(
     node_count: int,
 ):
     node_count += 1
-    if depth == 0 or board.is_game_over():
+
+    if board.is_checkmate() and maximizing_player:
+        # white checkmates black
+        return 9999
+    elif board.is_checkmate():
+        # black checkmates white
+        return -9999
+    elif depth == 0 or board.is_game_over():
+        # draw or depth reached
         return evaluate_board(board), node_count    
 
     if maximizing_player:
@@ -122,7 +130,7 @@ def play(white_engine, black_engine, time_control):
         # ! logic works for white so far, need to generalize for black
         if board.turn == chess.WHITE:
             search_start = time.time()
-            move, searched_nodes = white_engine(board, 4)
+            move, searched_nodes = white_engine(board, 2)
             search_end = time.time()
             # todo : log this instead of printing
             logging.info(f'move {current_move}')
@@ -145,11 +153,10 @@ def play(white_engine, black_engine, time_control):
         
 
     game.headers["Result"] = board.result()
-    # game.headers['Total nodes searched: '] = searched_nodes
     print("Game over")
     print("Result: ", board.result())
 
-    return board.result(), game_moves.strip()
+    return board.result(), game_moves
 
 
 def test_against_previous(current, previous, savefile: str, n_games: int):
@@ -208,5 +215,5 @@ def iterative_deepening_minimax(board:chess.Board, max_depth:int, time_limit:int
 
 
 if __name__ == "__main__":
-    test_against_previous(choose_move, choose_move, 'v1_4ply_vs_v1_2ply.txt', 1)
+    test_against_previous(choose_move, choose_move, 'test_runs/v1_4ply_vs_v1_2ply_checkmate_fixed.txt', 1)
 
