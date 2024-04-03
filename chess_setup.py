@@ -55,10 +55,10 @@ def minimax(
 
     if board.is_checkmate() and maximizing_player:
         # white checkmates black
-        return 9999
+        return 9999, node_count
     elif board.is_checkmate():
         # black checkmates white
-        return -9999
+        return -9999, node_count
     elif depth == 0 or board.is_game_over():
         # draw or depth reached
         return evaluate_board(board), node_count    
@@ -104,6 +104,11 @@ def choose_move(board:chess.Board, depth:int):
 
     for move in board.legal_moves:
         board.push(move)
+        if board.is_repetition(3):
+            # detects a threefold repetition, prevents going back to old positions
+            # detection of threefold repetition is done by traversing the total list of moves
+            board.pop()
+            continue
         evaluation, node_count = minimax(board, depth - 1, alpha, beta, False, 0)
         board.pop()
 
