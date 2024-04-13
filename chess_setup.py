@@ -17,21 +17,26 @@ logging.basicConfig(
 )
 
 SAVEFILE = "test_runs/1.1_3ply_vs1.1_2_ply.txt"
+piece_values = {
+    chess.PAWN: 1,
+    chess.ROOK: 5,
+    chess.BISHOP: 3.4,
+    chess.KNIGHT: 3.2,
+    chess.QUEEN: 9,
+    chess.KING: 100,
+}
 
 
 def evaluate_board(board: chess.Board) -> float:
     """
     Returns the evaluation for a given board position.
     """
+    pieces = list(board.piece_map().values())
     white_pieces_value = sum(
-        piece_value(piece)
-        for piece in board.piece_map().values()
-        if piece.color == chess.WHITE
+        piece_values.get(piece, 0) for piece in pieces if piece.color == chess.WHITE
     )
     black_pieces_value = sum(
-        piece_value(piece)
-        for piece in board.piece_map().values()
-        if piece.color == chess.BLACK
+        piece_values.get(piece, 0) for piece in pieces if piece.color == chess.BLACK
     )
     material_advantage = white_pieces_value - black_pieces_value
 
@@ -45,33 +50,13 @@ def evaluate_board(board: chess.Board) -> float:
     return material_advantage + mobility
 
 
-def piece_value(piece: chess.Piece):
-    """
-    User defined piece values."""
-    # Todo : Replace with dictionary to save time
-    if piece.piece_type == chess.PAWN:
-        return 1
-    if piece.piece_type == chess.KNIGHT:
-        return 3.2
-    if piece.piece_type == chess.BISHOP:
-        return 3.4
-    if piece.piece_type == chess.ROOK:
-        return 5
-    if piece.piece_type == chess.QUEEN:
-        return 9
-    if piece.piece_type == chess.KING:
-        return 100
-    else:
-        return 0
-
-
 def get_move_priority(move: chess.Move, board: chess.Board):
-    '''
+    """
     Gets move priority order.
     Move priority order - checkmates first, then checks, followed by captures, then other moves.
-    This priority is to be used to sort the moves to get a good move ordering, improving the 
+    This priority is to be used to sort the moves to get a good move ordering, improving the
     speed of search(better pruning).
-    '''
+    """
     if board.is_checkmate(move):
         return 0
     if board.is_check(move):
@@ -82,8 +67,8 @@ def get_move_priority(move: chess.Move, board: chess.Board):
 
 
 def count_sort_moves(moves: List[chess.Move], board: chess.Board) -> List[chess.Move]:
-    '''
-    Orders moves to improve pruning in ab search.'''
+    """
+    Orders moves to improve pruning in ab search."""
     sorted_moves = []
     for priority in range(4):
         for move in moves:
@@ -97,7 +82,6 @@ def minimax(
     depth: int,
     alpha: float,
     beta: float,
-    maximizing_player: bool,
     node_count: int,
 ) -> Tuple[float, int]:
     """
@@ -108,7 +92,6 @@ def minimax(
         depth : Depth to which the search still has to go on, stops at zero.
         alpha : Parameter for minimax.
         beta : Parameter for minimax.
-        maximizing_player : True for white, helps in working with a standard eval.
         node_count : The number of nodes visited, used for debugging and perft.
 
     Returns:
@@ -117,7 +100,7 @@ def minimax(
     """
     node_count += 1
 
-    if board.is_checkmate() and maximizing_player:
+    if board.is_checkmate() and board.turn:
         # white checkmates black
         return 9999, node_count
     if board.is_checkmate():
@@ -127,14 +110,12 @@ def minimax(
         # draw or depth reached
         return evaluate_board(board), node_count
 
-    if maximizing_player:
+    if board.turn:
         # playing as white
         max_eval = float("-inf")
         for move in board.legal_moves:
             board.push(move)
-            evaluation, node_count = minimax(
-                board, depth - 1, alpha, beta, False, node_count
-            )
+            evaluation, node_count = minimax(board, depth - 1, alpha, beta, node_count)
             board.pop()
             max_eval = max(max_eval, evaluation)
             alpha = max(alpha, evaluation)
@@ -147,9 +128,7 @@ def minimax(
     min_eval = float("inf")
     for move in board.legal_moves:
         board.push(move)
-        evaluation, node_count = minimax(
-            board, depth - 1, alpha, beta, True, node_count
-        )
+        evaluation, node_count = minimax(board, depth - 1, alpha, beta, node_count)
         board.pop()
         min_eval = min(min_eval, evaluation)
         beta = min(beta, evaluation)
@@ -185,7 +164,7 @@ def choose_move(board: chess.Board, depth: int) -> Tuple[chess.Move, int]:
             # detection of threefold repetition is done by traversing the total list of moves
             board.pop()
             continue
-        evaluation, node_count = minimax(board, depth - 1, alpha, beta, False, 0)
+        evaluation, node_count = minimax(board, depth - 1, alpha, beta, 0)
         board.pop()
 
         total_nodes += node_count
@@ -362,7 +341,7 @@ def iterative_deepening_minimax(board: chess.Board, max_depth: int, time_limit: 
         for move in board.legal_moves:
             board.push(move)
             # Todo : add node_count, modify according to improved parameters in minimax
-            evaluation, _ = minimax(board, depth, alpha, beta, False, 0)
+            evaluation, _ = minimax(board, depth, alpha, beta, 0)
             board.pop()
             if evaluation > alpha:
                 alpha = evaluation
