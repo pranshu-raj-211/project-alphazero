@@ -51,15 +51,15 @@ def piece_value(piece: chess.Piece):
     # Todo : Replace with dictionary to save time
     if piece.piece_type == chess.PAWN:
         return 1
-    elif piece.piece_type == chess.KNIGHT:
+    if piece.piece_type == chess.KNIGHT:
         return 3.2
-    elif piece.piece_type == chess.BISHOP:
+    if piece.piece_type == chess.BISHOP:
         return 3.4
-    elif piece.piece_type == chess.ROOK:
+    if piece.piece_type == chess.ROOK:
         return 5
-    elif piece.piece_type == chess.QUEEN:
+    if piece.piece_type == chess.QUEEN:
         return 9
-    elif piece.piece_type == chess.KING:
+    if piece.piece_type == chess.KING:
         return 100
     else:
         return 0
@@ -68,14 +68,15 @@ def piece_value(piece: chess.Piece):
 def get_move_priority(move: chess.Move, board: chess.Board):
     '''
     Gets move priority order.
-    The move priority order is - checkmates first, then checks, followed by captures, then other moves.
-    This priority is to be used to sort the moves to get a good move ordering, improving the speed of search(better pruning).
+    Move priority order - checkmates first, then checks, followed by captures, then other moves.
+    This priority is to be used to sort the moves to get a good move ordering, improving the 
+    speed of search(better pruning).
     '''
     if board.is_checkmate(move):
         return 0
-    elif board.is_check(move):
+    if board.is_check(move):
         return 1
-    elif board.is_capture(move):
+    if board.is_capture(move):
         return 2
     return 3
 
@@ -119,10 +120,10 @@ def minimax(
     if board.is_checkmate() and maximizing_player:
         # white checkmates black
         return 9999, node_count
-    elif board.is_checkmate():
+    if board.is_checkmate():
         # black checkmates white
         return -9999, node_count
-    elif depth == 0 or board.is_game_over():
+    if depth == 0 or board.is_game_over():
         # draw or depth reached
         return evaluate_board(board), node_count
 
@@ -212,15 +213,15 @@ def play_opening(move_number: int, maximizing_player: bool):
     if maximizing_player:
         if move_number == 1:
             return "e2e4"
-        elif move_number == 2:
+        if move_number == 2:
             return "b1c3"
-        elif move_number == 3:
+        if move_number == 3:
             return "f2f4"
     if move_number == 1:
         return "e7e5"
-    elif move_number == 2:
+    if move_number == 2:
         return "g8f6"
-    elif move_number == 3:
+    if move_number == 3:
         return "e5f4"
     raise ValueError("Incorrect move number for opening")
 
@@ -258,13 +259,13 @@ def play(white_engine, black_engine, time_control: int):
         print("not implemented yet")
     while not board.is_game_over():
         searched_nodes = 0
-        # ! logic works for white so far, need to generalize for black
+        # ! work out why the engine does not go on the attack
         if board.turn == chess.WHITE:
             search_start = time.time()
             move, searched_nodes = white_engine(board, 3)
             search_end = time.time()
-            # todo : log this instead of printing
-            logging.info("move %s}", current_move)
+
+            logging.info("move %s", current_move)
             current_move += 1
             logging.info(
                 "nodes : %s  time: %s",
