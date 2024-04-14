@@ -1,5 +1,24 @@
 # project-alphazero
 
-Implementing an RL based agent to play adverserial games, learning from self play.
+Implementing an chess agent to play at an intermediate level.
 
-This project implements the methods described in the paper by Deepmind introducing [alphazero](https://arxiv.org/abs/1712.01815v1), a learning agent that learns to play adverserial games through self-play.
+This project aims to create a strong chess engine in python without the use of neural networks, just by using search algorithms and heuristics.
+
+Currently the engine can search at speeds of 10-15k nodes per second, without the use of transposition tables.
+
+### Features implemented so far -
+- Minimax Search
+- Alpha Beta Pruning
+- Move Ordering
+
+### Currently working on -
+- Improving Iterative deepening search
+- Adding zobrist hashing for transposition tables
+- Implementing Quiescence search
+- A simplified version of an opening book
+
+### To be implemented -
+- Piece square tables
+- Monte Carlo Tree Search
+- MVV-LVA (Most Valuable Victim - Least Valuable Aggressor)
+- Static Exchange Evaluation
