@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-SAVEFILE = "test_runs/1.1_3ply_vs1.1_2_ply.txt"
+SAVEFILE = "test_runs/iterative_vs_baseline.txt"
 piece_values = {
     chess.PAWN: 1,
     chess.ROOK: 5,
@@ -138,7 +138,7 @@ def minimax(
     return min_eval, node_count
 
 
-def choose_move(board: chess.Board, depth: int) -> Tuple[chess.Move, int]:
+def choose_move_minimax(board: chess.Board, depth: int) -> Tuple[chess.Move, int]:
     """
     Chooses the best move out of all possible legal moves in a position.
 
@@ -159,9 +159,39 @@ def choose_move(board: chess.Board, depth: int) -> Tuple[chess.Move, int]:
 
     for move in board.legal_moves:
         board.push(move)
-        if board.is_repetition(3):
-            # detects a threefold repetition, prevents going back to old positions
-            # detection of threefold repetition is done by traversing the total list of moves
+        if board.is_repetition(2):
+            # Detects a threefold repetition, prevents going back to old positions.
+            # Detection of threefold repetition is done by traversing the total list of moves.
+            # If arg to is_repetition is 2, it prevents any position from repeating ever again
+            # this might cause some issues on its own as well.
+            board.pop()
+            continue
+        evaluation, node_count = minimax(board, depth - 1, alpha, beta, 0)
+        board.pop()
+
+        total_nodes += node_count
+        if evaluation > max_eval:
+            max_eval = evaluation
+            best_move = move
+
+    return best_move, total_nodes
+
+
+def choose_move_iterative_minimax(
+    board: chess.Board, depth: int
+) -> Tuple[chess.Move, int]:
+    """
+    Same as the previous function, this one uses iterative minimax instead.
+    """
+    best_move = None
+    max_eval = float("-inf")
+    alpha = float("-inf")
+    beta = float("inf")
+    total_nodes = 0
+
+    for move in board.legal_moves:
+        board.push(move)
+        if board.is_repetition(2):
             board.pop()
             continue
         evaluation, node_count = minimax(board, depth - 1, alpha, beta, 0)
@@ -185,24 +215,16 @@ def get_random_move(board: chess.Board):
     return random.choice(legal_moves)
 
 
-def play_opening(move_number: int, maximizing_player: bool):
+openings = {"Vienna Gambit": ["e2e4", "e7e5", "b1c3", "g8f6", "f2f4", "e5f4"]}
+
+
+def play_opening(move_number: int, maximizing_player: bool, opening: str):
     """
-    Plays the Vienna gambit opening to prevent pieces from shuffling around.
+    Plays an opening to prevent pieces from shuffling around.
     Acts as a temporary opening book."""
     if maximizing_player:
-        if move_number == 1:
-            return "e2e4"
-        if move_number == 2:
-            return "b1c3"
-        if move_number == 3:
-            return "f2f4"
-    if move_number == 1:
-        return "e7e5"
-    if move_number == 2:
-        return "g8f6"
-    if move_number == 3:
-        return "e5f4"
-    raise ValueError("Incorrect move number for opening")
+        return openings[opening][2 * (move_number - 1)]
+    return openings[opening][2 * (move_number - 1) + 1]
 
 
 def save_pgn(result: str, pgn: str, savefile: str):
@@ -235,13 +257,13 @@ def play(white_engine, black_engine, time_control: int):
     game_moves = ""
     current_move = 1
     if time_control:
-        print("not implemented yet")
+        print("not implemented time control yet")
     while not board.is_game_over():
         searched_nodes = 0
         # ! work out why the engine does not go on the attack
         if board.turn == chess.WHITE:
             search_start = time.time()
-            move, searched_nodes = white_engine(board, 3)
+            move, searched_nodes = white_engine(board, 3, 10)
             search_end = time.time()
 
             logging.info("move %s", current_move)
@@ -253,10 +275,10 @@ def play(white_engine, black_engine, time_control: int):
             )
         else:
             search_start = time.time()
-            move, searched_nodes = black_engine(board, 1)
+            move, searched_nodes = black_engine(board, 3)
             search_end = time.time()
             logging.info(
-                "nodes : %s  time: %s",
+                "nodes : %s  time: %s\n",
                 str(searched_nodes),
                 str(search_end - search_start),
             )
@@ -335,22 +357,50 @@ def iterative_deepening_minimax(board: chess.Board, max_depth: int, time_limit: 
     """
     start_time = time.time()
     best_move = None
+    nodes_searched = 0
     for depth in range(1, max_depth + 1):
         alpha = float("-inf")
         beta = float("inf")
         for move in board.legal_moves:
             board.push(move)
             # Todo : add node_count, modify according to improved parameters in minimax
-            evaluation, _ = minimax(board, depth, alpha, beta, 0)
+            evaluation, nodes_added = minimax(board, depth, alpha, beta, 0)
             board.pop()
+            nodes_searched += nodes_added + 1
             if evaluation > alpha:
                 alpha = evaluation
                 best_move = move
 
         if time.time() - start_time >= time_limit:
             break
-    return best_move
+    return best_move, nodes_searched
+
+
+def play_puzzles(puzzle_filepath: str, plies_to_play: int, search_depth: int):
+    f = open('move_storage.txt','w')
+    with open(puzzle_filepath) as file:
+        for puzzle_count, line  in enumerate(file):
+            logging.info('\npuzzle number %s', puzzle_count+1)
+
+            board = chess.Board(line)
+            moves_played = ""
+            for _ in range(plies_to_play):
+                move, nodes_searched = choose_move_minimax(board, search_depth)
+                logging.info("%s plays %s %s", board.turn, move, nodes_searched)
+                if move:
+                    board.push(move)
+                    moves_played += " " + str(move)
+                else:
+                    print('checkmate status:',board.is_checkmate())
+                    print('stalemate status:',board.is_stalemate())
+                    print()
+                    break
+            f.write(moves_played+'\n')
+            # print(board)
+
+    f.close()
 
 
 if __name__ == "__main__":
-    test_against_previous(choose_move, choose_move, 1)
+    # test_against_previous(iterative_deepening_minimax, choose_move_minimax, 1)
+    play_puzzles("puzzles.txt", 8,5)
