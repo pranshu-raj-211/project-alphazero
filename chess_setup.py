@@ -377,30 +377,59 @@ def iterative_deepening_minimax(board: chess.Board, max_depth: int, time_limit: 
 
 
 def play_puzzles(puzzle_filepath: str, plies_to_play: int, search_depth: int):
-    f = open('move_storage.txt','w')
-    with open(puzzle_filepath) as file:
-        for puzzle_count, line  in enumerate(file):
-            logging.info('\npuzzle number %s', puzzle_count+1)
+    output_file_white = open("moves_3_ply_white.txt", "w")
+    output_file_black = open("moves_3_ply_black.txt", "w")
 
-            board = chess.Board(line)
-            moves_played = ""
-            for _ in range(plies_to_play):
-                move, nodes_searched = choose_move_minimax(board, search_depth)
-                logging.info("%s plays %s %s", board.turn, move, nodes_searched)
-                if move:
-                    board.push(move)
-                    moves_played += " " + str(move)
-                else:
-                    print('checkmate status:',board.is_checkmate())
-                    print('stalemate status:',board.is_stalemate())
-                    print()
-                    break
-            f.write(moves_played+'\n')
-            # print(board)
+    puzzle_file = open(puzzle_filepath)
+    puzzle_lines = puzzle_file.readlines()
+    puzzle_file.close()
+    for puzzle_count, fen_str in enumerate(puzzle_lines):
+        logging.info("\npuzzle number %s", puzzle_count + 1)
 
-    f.close()
+
+        # no idea if you should use copies here instead of creating boards
+        white_board = chess.Board(fen_str)
+        black_board = chess.Board(fen_str)
+
+        moves_played_white = ""
+        moves_played_black = ""
+
+        print('playing as white')
+        # play as white
+        white_board.turn = chess.WHITE
+        for _ in range(plies_to_play):
+            move, nodes_searched = choose_move_minimax(white_board, search_depth)
+            logging.info("%s plays %s %s", white_board.turn, move, nodes_searched)
+            if move:
+                white_board.push(move)
+                moves_played_white += " " + str(move)
+            else:
+                print("checkmate status:", white_board.is_checkmate())
+                print("stalemate status:", white_board.is_stalemate())
+                print()
+                break
+        output_file_white.write(moves_played_white + "\n")
+
+        print('playing as black')
+        # play as black
+        black_board.turn = chess.BLACK
+        for _ in range(plies_to_play):
+            move, nodes_searched = choose_move_minimax(black_board, search_depth)
+            logging.info("%s plays %s %s", black_board.turn, move, nodes_searched)
+            if move:
+                black_board.push(move)
+                moves_played_black += " " + str(move)
+            else:
+                print("checkmate status:", black_board.is_checkmate())
+                print("stalemate status:", black_board.is_stalemate())
+                print()
+                break
+        output_file_black.write(moves_played_black + "\n")
+
+    output_file_white.close()
+    output_file_black.close()
 
 
 if __name__ == "__main__":
     # test_against_previous(iterative_deepening_minimax, choose_move_minimax, 1)
-    play_puzzles("puzzles.txt", 8,5)
+    play_puzzles("puzzles.txt", 8, 3)
