@@ -16,9 +16,14 @@ Currently the engine can search at speeds of 10-15k nodes per second, without th
 - Adding zobrist hashing for transposition tables
 - Implementing Quiescence search
 - A simplified version of an opening book
-
-### To be implemented -
 - Piece square tables
 - Monte Carlo Tree Search
 - MVV-LVA (Most Valuable Victim - Least Valuable Aggressor)
-- Static Exchange Evaluation
+
+### To be implemented -
+- Null move heuristic
+- Killer heuristic
+- Endgame table connections
+- Search Statistics
+- Tests (yes I have not done much to test my code)
+- Static Exchange Evaluation (SEE)
