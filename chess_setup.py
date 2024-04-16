@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-SAVEFILE = "test_runs/iterative_vs_baseline.txt"
+SAVEFILE = "test_runs/fixed_eval.txt"
 piece_values = {
     chess.PAWN: 1,
     chess.ROOK: 5,
@@ -44,9 +44,8 @@ def evaluate_board(board: chess.Board) -> float:
 
     mobility = len(list(board.legal_moves)) / 10
     # Todo : change all this stuff into a class instead, make the list of legal moves a class var
-    if not board.turn:
-        # black playing, black's material advantage + mobility difference
-        return -(material_advantage + mobility)
+    # evaluation in case of minimax is asymmetric, from pov of white only
+    # negamax evaluation is asymmetric, but we have not used it here
     return material_advantage + mobility
 
 
@@ -263,7 +262,7 @@ def play(white_engine, black_engine, time_control: int):
         # ! work out why the engine does not go on the attack
         if board.turn == chess.WHITE:
             search_start = time.time()
-            move, searched_nodes = white_engine(board, 3, 10)
+            move, searched_nodes = white_engine(board, 4)
             search_end = time.time()
 
             logging.info("move %s", current_move)
@@ -402,5 +401,5 @@ def play_puzzles(puzzle_filepath: str, plies_to_play: int, search_depth: int):
 
 
 if __name__ == "__main__":
-    # test_against_previous(iterative_deepening_minimax, choose_move_minimax, 1)
-    play_puzzles("puzzles.txt", 8,5)
+    test_against_previous(choose_move_minimax, choose_move_minimax, 1)
+    #play_puzzles("puzzles.txt", 8,5)
