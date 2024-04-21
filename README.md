@@ -27,3 +27,4 @@ Currently the engine can search at speeds of 10-15k nodes per second, without th
 - Search Statistics
 - Tests (yes I have not done much to test my code)
 - Static Exchange Evaluation (SEE)
+- SPRT (Sequential probability ratio test) for evaluating the strength of my engine
